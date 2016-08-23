@@ -20,8 +20,6 @@
 #include <vector>
 #include <deque>
 
-#include "out.h"
-#include "mur.h"
 #include "samrrr_bibl.h"
 
 #include "NeHeGL.h"														// Header File For NeHeGL
@@ -37,7 +35,6 @@ static BOOL g_createFullScreen;
 int exitgame
 , razokx =/*/640/*/GetSystemMetrics(SM_CXSCREEN)/**/
 , razoky =/*/480/*/GetSystemMetrics(SM_CYSCREEN)/**/;
-float fps = 0;
 
 GL_Window			window;
 
@@ -45,13 +42,11 @@ GLuint  base;      // База списка отображения для фонта
 
 HDC HDc;
 
-GLuint tex_mur;
-int M_speed;
-
+MOUSEINFO mouse;
 
 
 using namespace std;
-//#define MAX_AST 30
+
 #define WM_TOGGLEFULLSCREEN (WM_USER+1)								
 
 typedef struct													// Create A Structure
@@ -62,25 +57,14 @@ typedef struct													// Create A Structure
 	GLuint	height;												// Image Height
 	GLuint	texID;												// Texture ID Used To Select A Texture
 } TextureImage;													// Structure Name
-TextureImage textureTGA[60];
+TextureImage texture[60];
 
-int mx, my, mxz, myz, mch, mchz, mchl, mchr, mchlz, mchrz;
 
 GL_Window*	g_window;													// Window Structure
 Keys*		g_keys;														// Keyboard
 
 
 
-struct                    // Создание структуры для информации о таймере
-{
-	__int64       frequency;                 // Частота таймера
-	float         resolution;                // Точность таймера
-	unsigned long mm_timer_start;            // Стартовое значение мультимедийного таймера
-	unsigned long mm_timer_elapsed;          // Прошедшее время мультимедийного таймера
-	bool          performance_timer;         // Использовать высокоточный таймер?
-	__int64       performance_timer_start;   // Стартовое значение высокоточного таймера
-	__int64       performance_timer_elapsed; // Прошедшее время высокоточного таймера
-} mytimer;
 
 typedef struct
 {
@@ -102,115 +86,14 @@ TextureImage basetex[100];
 
 
 
-typedef struct{
-	union
-	{
-		struct{ float x, y, z; };
-		float f[3];
-	};
-}Vec;
-
-long ti;
-
-
-GLuint	texture[10];
-
-float fpsla[10];
-
-
-
-
-void circl(float x, float y, float z, float c);
-void movveforw(float cam_c, float cam_c1, float cam_c2, float rass, float *cam_x, float *cam_y, float *cam_z);
-void movve(float *cam_c, float *cam_c1, float *cam_c2, float x, float y);
-void noise_init();
-
-
-typedef struct{
-	int food;
-	int block;
-	float z[4], zzz[4];//food; base near; 
-}struct_point;
-
-typedef struct{
-	int t;
-	int food;
-	float life;
-	char mission[100];
-	int x, y;
-	int x1[15000], y1[15000];
-	int ray_p;
-	int zx, zy;
-	float mark_level_h;
-	float mark_level_f;
-	int dead_time;
-}struct_mur;
-
-struct_point pole[300][300];
-struct_mur mur[1000];
-char pole_ch[300][300];
-
-
-void M_upd();
-void M_init();
 
 
 
 
 
 
-/*
 
-void TimerInit(void)
-{
-memset(&mytimer, 0, sizeof(mytimer));
 
-if (!QueryPerformanceFrequency((LARGE_INTEGER *) &mytimer.frequency))
-{
-// Нет высокоточного таймера
-mytimer.performance_timer  = FALSE;
-mytimer.mm_timer_start  = timeGetTime();
-mytimer.resolution  = 1.0f/1000.0f;
-mytimer.frequency    = 1000;
-mytimer.mm_timer_elapsed  = mytimer.mm_timer_start;
-}
-else
-{
-// Высокоточный таймер доступен, используем его вместо мультимедийного таймера
-// Взять текущее время и сохранить его в performance_timer_start
-QueryPerformanceCounter((LARGE_INTEGER *) &mytimer.performance_timer_start);
-mytimer.performance_timer    = TRUE;        // Установить флаг наличия таймера в TRUE
-// Вычислить точность таймера, используя частоту
-mytimer.resolution    = (float) (((double)1.0f)/((double)mytimer.frequency));
-// Присвоить прошедшему времени текущее время
-mytimer.performance_timer_elapsed  = mytimer.performance_timer_start;
-}
-}
-
-float TimerGetTim()           // Взять время в миллисекундах
-{
-__int64 ztime;                // time содержит 64 бита
-__int64 time;                // time содержит 64 бита
-
-if (mytimer.performance_timer) // Есть высокоточный таймер?
-{
-// Захват текущего значения высокоточного таймера
-QueryPerformanceCounter((LARGE_INTEGER *) &time);
-// Вернем текущее время минус начальное время, умноженное на точность и 1000 (для миллисекунд)
-ztime=mytimer.performance_timer_start;
-mytimer.performance_timer_start=time;
-return ( (float) ( time - ztime) * mytimer.resolution)*1000.0f;
-}
-else
-{
-// Вернем текущее время минус начальное время, умноженное на точность и 1000 (для миллисекунд)
-ztime=mytimer.mm_timer_start;
-mytimer.mm_timer_start=timeGetTime();
-return( (float) ( timeGetTime() - mytimer.mm_timer_start) * mytimer.resolution)*1000.0f;
-}
-}
-
-*/
 
 GLvoid BuildFont(float heigf)								// Build Our Bitmap Font
 {
@@ -299,33 +182,6 @@ void ReshapeGL(int width, int height)									// Reshape The Window When It's Mo
 	razokx = width;
 	razoky = height;
 }
-
-int dvavx(int i)
-{
-	int r, o = 2;
-	for (r = 1; r<i; r++)
-		o *= 2;
-	return o;
-}
-
-float min1(float i, float r)
-{
-	if (i>r)return r;
-	return i;
-}
-
-float abs1(float i)
-{
-	if (i<0)return -i;
-	return i;
-}
-
-float max1(float i, float r)
-{
-	if (i>r)return i;
-	return r;
-}
-
 
 BOOL CreateWindowGL(GL_Window* window)									// This Code Creates Our OpenGL Window
 {
@@ -595,22 +451,19 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	}
 		return 0;														// Return
 	case WM_MOUSEMOVE:
-		mxz = mx;
-		myz = my;
-		mx = LOWORD(lParam);
-		my = HIWORD(lParam);
+		mouse.addaction(8, LOWORD(lParam), HIWORD(lParam));
 		break;
 	case WM_LBUTTONDOWN:
-		mchl = 1;
+		mouse.addaction(1, 0, 0);
 		break;
 	case WM_LBUTTONUP:
-		mchl = 0;
+		mouse.addaction(2, 0, 0);
 		break;
 	case WM_RBUTTONDOWN:
-		mchr = 1;
+		mouse.addaction(3, 0, 0);
 		break;
 	case WM_RBUTTONUP:
-		mchr = 0;
+		mouse.addaction(4, 0, 0);
 		break;
 
 	case WM_SYSCOMMAND:												// Intercept System Commands
@@ -722,7 +575,6 @@ BOOL RegisterWindowClass(Application* application)						// Register A Window Cla
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	int i, r, o, j;
-	noise_init();
 
 	Application			application;									// Window Structure
 	Keys				keys;											// Key Structure
@@ -827,156 +679,6 @@ void ToggleFullscreen(GL_Window* window)								// Toggle Fullscreen/Windowed
 	PostMessage(window->hWnd, WM_TOGGLEFULLSCREEN, 0, 0);				// Send A WM_TOGGLEFULLSCREEN Message
 }
 
-void putknopk(float x, float y, float x1, float y1, char* textinkn)
-{
-	int i, r, o, j, q, w, a, b, c, d;
-
-
-	glDisable(GL_TEXTURE_2D);
-	glColor3f(0, 0, 0);
-	glBegin(GL_POLYGON);
-	glVertex3f(x - 1, 1 - (y), -1);
-	glVertex3f(x - 1, 1 - (y1), -1);
-	glVertex3f(x1 - 1, 1 - (y1), -1);
-	glVertex3f(x1 - 1, 1 - (y), -1);
-	glEnd();
-
-	glColor3f(1, 1, 1);
-	glBegin(GL_POLYGON);
-	glVertex3f(x + 0.01 - 1, 1 - (y + 0.01), -1);
-	glVertex3f(x + 0.01 - 1, 1 - (y1 - 0.01), -1);
-	glVertex3f(x1 - 0.01 - 1, 1 - (y1 - 0.01), -1);
-	glVertex3f(x1 - 0.01 - 1, 1 - (y + 0.01), -1);
-	glEnd();
-
-	glColor3f(0, 0, 0);
-	glRasterPos3f(x + 0.015 - 1, 1 - (y1 + y) / 2 - 0.014, -1);
-	glPrint(textinkn);
-
-}
-
-int mxv(float x, float y, float x1, float y1)
-
-{
-	if ((float)(razoky / 2.0 - my) / (float)razoky * 2>min1(y, y1))
-	if ((float)(razoky / 2.0 - my) / (float)razoky * 2<max1(y, y1))
-	if ((float)(mx - razokx / 2.0) / (float)razoky * 2>min1(x, x1))
-	if ((float)(mx - razokx / 2.0) / (float)razoky * 2<max1(x, x1))
-		return 1;
-	return 0;
-}
-
-int BuildTexture(char *szPathName, GLuint &texid)						// Load Image And Convert To A Texture
-{
-	HDC			hdcTemp;												// The DC To Hold Our Bitmap
-	HBITMAP		hbmpTemp;												// Holds The Bitmap Temporarily
-	IPicture	*pPicture;												// IPicture Interface
-	OLECHAR		wszPath[MAX_PATH + 1];									// Full Path To Picture (WCHAR)
-	char		szPath[MAX_PATH + 1];	// Full Path To Picture
-	TCHAR		szPathDD[MAX_PATH + 1];
-	long		lWidth;													// Width In Logical Units
-	long		lHeight;												// Height In Logical Units
-	long		lWidthPixels;											// Width In Pixels
-	long		lHeightPixels;											// Height In Pixels
-	GLint		glMaxTexDim;											// Holds Maximum Texture Size
-
-	if (strstr(szPathName, "http://"))									// If PathName Contains http:// Then...
-	{
-		strcpy(szPath, szPathName);										// Append The PathName To szPath
-	}
-	else																// Otherwise... We Are Loading From A File
-	{
-		//GetCurrentDirectory(MAX_PATH, szPathDD);							// Get Our Working Directory
-		CharToOem(szPathDD, szPath);
-		strcat(szPath, "\\");											// Append "\" After The Working Directory
-		strcat(szPath, szPathName);										// Append The PathName
-	}
-
-	MultiByteToWideChar(CP_ACP, 0, szPath, -1, wszPath, MAX_PATH);		// Convert From ASCII To Unicode
-	HRESULT hr = OleLoadPicturePath(wszPath, 0, 0, 0, IID_IPicture, (void**)&pPicture);
-
-	if (FAILED(hr))														// If Loading Failed
-		return FALSE;													// Return False
-
-	hdcTemp = CreateCompatibleDC(GetDC(0));								// Create The Windows Compatible Device Context
-	if (!hdcTemp)														// Did Creation Fail?
-	{
-		pPicture->Release();											// Decrements IPicture Reference Count
-		return FALSE;													// Return False (Failure)
-	}
-
-	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &glMaxTexDim);					// Get Maximum Texture Size Supported
-
-	pPicture->get_Width(&lWidth);										// Get IPicture Width (Convert To Pixels)
-	lWidthPixels = MulDiv(lWidth, GetDeviceCaps(hdcTemp, LOGPIXELSX), 2540);
-	pPicture->get_Height(&lHeight);										// Get IPicture Height (Convert To Pixels)
-	lHeightPixels = MulDiv(lHeight, GetDeviceCaps(hdcTemp, LOGPIXELSY), 2540);
-
-	// Resize Image To Closest Power Of Two
-	if (lWidthPixels <= glMaxTexDim) // Is Image Width Less Than Or Equal To Cards Limit
-		lWidthPixels = 1 << (int)floor((log((double)lWidthPixels) / log(2.0f)) + 0.5f);
-	else  // Otherwise  Set Width To "Max Power Of Two" That The Card Can Handle
-		lWidthPixels = glMaxTexDim;
-
-	if (lHeightPixels <= glMaxTexDim) // Is Image Height Greater Than Cards Limit
-		lHeightPixels = 1 << (int)floor((log((double)lHeightPixels) / log(2.0f)) + 0.5f);
-	else  // Otherwise  Set Height To "Max Power Of Two" That The Card Can Handle
-		lHeightPixels = glMaxTexDim;
-
-	//	Create A Temporary Bitmap
-	BITMAPINFO	bi = { 0 };												// The Type Of Bitmap We Request
-	DWORD		*pBits = 0;												// Pointer To The Bitmap Bits
-
-	bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);				// Set Structure Size
-	bi.bmiHeader.biBitCount = 32;									// 32 Bit
-	bi.bmiHeader.biWidth = lWidthPixels;							// Power Of Two Width
-	bi.bmiHeader.biHeight = lHeightPixels;						// Make Image Top Up (Positive Y-Axis)
-	bi.bmiHeader.biCompression = BI_RGB;								// RGB Encoding
-	bi.bmiHeader.biPlanes = 1;									// 1 Bitplane
-
-	//	Creating A Bitmap This Way Allows Us To Specify Color Depth And Gives Us Imediate Access To The Bits
-	hbmpTemp = CreateDIBSection(hdcTemp, &bi, DIB_RGB_COLORS, (void**)&pBits, 0, 0);
-
-	if (!hbmpTemp)														// Did Creation Fail?
-	{
-		DeleteDC(hdcTemp);												// Delete The Device Context
-		pPicture->Release();											// Decrements IPicture Reference Count
-		return FALSE;													// Return False (Failure)
-	}
-
-	SelectObject(hdcTemp, hbmpTemp);									// Select Handle To Our Temp DC And Our Temp Bitmap Object
-
-	// Render The IPicture On To The Bitmap
-	pPicture->Render(hdcTemp, 0, 0, lWidthPixels, lHeightPixels, 0, lHeight, lWidth, -lHeight, 0);
-
-	// Convert From BGR To RGB Format And Add An Alpha Value Of 255
-	for (long i = 0; i < lWidthPixels * lHeightPixels; i++)				// Loop Through All Of The Pixels
-	{
-		BYTE* pPixel = (BYTE*)(&pBits[i]);							// Grab The Current Pixel
-		BYTE  temp = pPixel[0];									// Store 1st Color In Temp Variable (Blue)
-		pPixel[0] = pPixel[2];									// Move Red Value To Correct Position (1st)
-		pPixel[2] = temp;											// Move Temp Value To Correct Blue Position (3rd)
-		pPixel[3] = 255;											// Set The Alpha Value To 255
-	}
-
-	glGenTextures(1, &texid);											// Create The Texture
-
-	// Typical Texture Generation Using Data From The Bitmap
-	glBindTexture(GL_TEXTURE_2D, texid);								// Bind To The Texture ID
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);		// (Modify This For The Type Of Filtering You Want)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);     // (Modify This For The Type Of Filtering You Want)
-
-	// (Modify This If You Want Mipmaps)
-	glTexImage2D(GL_TEXTURE_2D, 0, 3, lWidthPixels, lHeightPixels, 0, GL_RGBA, GL_UNSIGNED_BYTE, pBits);
-
-	DeleteObject(hbmpTemp);												// Delete The Object
-	DeleteDC(hdcTemp);													// Delete The Device Context
-
-	pPicture->Release();												// Decrements IPicture Reference Count
-	//}else{return FALSE;};
-	return TRUE;														// Return True (All Good)
-}
-
 BOOL Initialize(GL_Window* window, Keys* keys)							// Any GL Init Code & User Initialiazation Goes Here
 {
 	char s[100];
@@ -986,90 +688,11 @@ BOOL Initialize(GL_Window* window, Keys* keys)							// Any GL Init Code & User 
 	g_window = window;												// Window Values
 	g_keys = keys;													// Key Values
 
-	M_init();
 
-	//TimerInit();
 
-	glGenTextures(1, &tex_mur);
 
-	LoadTGA(&textureTGA[0], "Data/bmp/0.tga", GL_LINEAR);
-	LoadTGA(&textureTGA[6], "Data/bmp/6.tga", GL_LINEAR);
+	//LoadTGA(&textureTGA[6], "Data/bmp/6.tga", GL_LINEAR);
 
-	/*
-	for (i = 1; i <= 5; i++)
-	{
-		strcpy(destination, "Data/bmp/block");
-		itoa(i, s, 10);
-		strcat(destination, s);
-		strcat(destination, "icon.tga");
-		LoadTGA(&blockinfo[i].textureTGA, destination, GL_LINEAR);
-
-		strcpy(destination, "Data/bmp/block");
-		itoa(i, s, 10);
-		strcat(destination, s);
-		strcat(destination, "tu0.tga");
-		LoadTGA(&blocktex[i][0], destination, GL_LINEAR);
-
-		strcpy(destination, "Data/bmp/block");
-		itoa(i, s, 10);
-		strcat(destination, s);
-		strcat(destination, "tu1.tga");
-		LoadTGA(&blocktex[i][1], destination, GL_LINEAR);
-
-		strcpy(destination, "Data/bmp/block");
-		itoa(i, s, 10);
-		strcat(destination, s);
-		strcat(destination, "tu2.tga");
-		LoadTGA(&blocktex[i][2], destination, GL_LINEAR);
-
-		strcpy(destination, "Data/bmp/block");
-		itoa(i, s, 10);
-		strcat(destination, s);
-		strcat(destination, "tu3.tga");
-		LoadTGA(&blocktex[i][3], destination, GL_LINEAR);
-
-		strcpy(destination, "Data/bmp/block");
-		itoa(i, s, 10);
-		strcat(destination, s);
-		strcat(destination, "tu4.tga");
-		LoadTGA(&blocktex[i][4], destination, GL_LINEAR);
-
-		strcpy(destination, "Data/bmp/block");
-		itoa(i, s, 10);
-		strcat(destination, s);
-		strcat(destination, "tu5.tga");
-		LoadTGA(&blocktex[i][5], destination, GL_LINEAR);
-
-	}
-	*/
-	/*
-	LoadTGA(&blockinfo[1].textureTGA, "Data/bmp/block1icon.tga", GL_LINEAR);
-	LoadTGA(&blocktex[1][0], "Data/bmp/block1tu0.tga", GL_LINEAR);
-	LoadTGA(&blocktex[1][1], "Data/bmp/block1tu1.tga", GL_LINEAR);
-	LoadTGA(&blocktex[1][2], "Data/bmp/block1tu2.tga", GL_LINEAR);
-	LoadTGA(&blocktex[1][3], "Data/bmp/block1tu3.tga", GL_LINEAR);
-	LoadTGA(&blocktex[1][4], "Data/bmp/block1tu4.tga", GL_LINEAR);
-	LoadTGA(&blocktex[1][5], "Data/bmp/block1tu5.tga", GL_LINEAR);
-
-	LoadTGA(&blockinfo[2].textureTGA, "Data/bmp/block2icon.tga", GL_LINEAR);
-	LoadTGA(&blocktex[2][0], "Data/bmp/block2tu0.tga", GL_LINEAR);
-	LoadTGA(&blocktex[2][1], "Data/bmp/block2tu1.tga", GL_LINEAR);
-	LoadTGA(&blocktex[2][2], "Data/bmp/block2tu2.tga", GL_LINEAR);
-	LoadTGA(&blocktex[2][3], "Data/bmp/block2tu3.tga", GL_LINEAR);
-	LoadTGA(&blocktex[2][4], "Data/bmp/block2tu4.tga", GL_LINEAR);
-	LoadTGA(&blocktex[2][5], "Data/bmp/block2tu5.tga", GL_LINEAR);
-
-	LoadTGA(&blockinfo[3].textureTGA, "Data/bmp/block3icon.tga", GL_LINEAR);
-	LoadTGA(&blocktex[3][0], "Data/bmp/block3tu0.tga", GL_LINEAR);
-	LoadTGA(&blocktex[3][1], "Data/bmp/block3tu1.tga", GL_LINEAR);
-	LoadTGA(&blocktex[3][2], "Data/bmp/block3tu2.tga", GL_LINEAR);
-	LoadTGA(&blocktex[3][3], "Data/bmp/block3tu3.tga", GL_LINEAR);
-	LoadTGA(&blocktex[3][4], "Data/bmp/block3tu4.tga", GL_LINEAR);
-	LoadTGA(&blocktex[3][5], "Data/bmp/block3tu5.tga", GL_LINEAR);
-
-	LoadTGA(&blockinfo[4].textureTGA, "Data/bmp/block4icon.tga", GL_LINEAR);
-	*/
-	LoadTGA(&basetex[0], "Data/bmp/base0.tga", GL_LINEAR);
 
 	glEnable(GL_TEXTURE_2D);											// Enable Texture Mapping
 	glClearColor(0.0f, 0.0f, 0.0f, 0.5f);								// Black Background
@@ -1116,17 +739,6 @@ void Update(DWORD milliseconds)
 	{
 		TerminateApplication(g_window);
 	}
-	/*
-	if (g_keys->keyDown[VK_ESCAPE])
-	{
-		if (gamemen == 1)
-		{
-			baseship = ship[myshipid];
-		}
-		gamemen = 3;
-		//exitgame=1;
-	}
-	*/
 	if (g_keys->keyDown[VK_F1])
 	{
 		if (!g_createFullScreen)
@@ -1142,34 +754,12 @@ void Update(DWORD milliseconds)
 		ToggleFullscreen(g_window);
 	}
 
-	if (g_keys->keyDown['S'])
-		movveforw(cam.c2, cam.c1, cam.c3, -0.2, &cam.x, &cam.y, &cam.z);
-	if (g_keys->keyDown['W'])
-		movveforw(cam.c2, cam.c1, cam.c3, 0.2, &cam.x, &cam.y, &cam.z);
+	//if (g_keys->keyDown['S'])
+	//	movveforw(cam.c2, cam.c1, cam.c3, -0.2, &cam.x, &cam.y, &cam.z);
+	//if (g_keys->keyDown['W'])
+	//	movveforw(cam.c2, cam.c1, cam.c3, 0.2, &cam.x, &cam.y, &cam.z);
 
-	for (i = 0; i < M_speed;i++)
-		M_upd();
 
-	if (keys['Q'] && !old_keys['Q'])
-	{
-		o = 0;
-		while (o == 0)
-		{
-			i = rand() % 261 + 20;
-			r = rand() % 261 + 20;
-			if ((i - 150)*(i - 150) + (r - 150)*(r - 150) > 100)
-				o = 1;
-		}
-		pole[i][r].food += 500;
-	}
-	if (keys['Z'] && !old_keys['Z'])
-	{
-		M_speed++;
-	}
-	if (keys['X'] && !old_keys['X'])
-	{
-		M_speed--;
-	}
 
 }
 
@@ -1196,62 +786,14 @@ void circl(float x, float y, float z, float c)
 
 }
 
-float movec(float c, float cnu, float gr)
-{
-
-	int i, r, o, j, q, w;
-	float u, v, xx, yy;
-	xx = c;
-
-	q = 0;
-	if (c >= 360) c -= 360;
-	if (c  <   0) c += 360;
-	if (cnu >= 360) cnu -= 360;
-	if (cnu<   0) cnu += 360;
-
-	if (min1(min1(min1(abs1(cnu - c - 360), abs1(c - cnu - 360)),
-		min1(abs1(cnu - c), abs1(c - cnu))),
-		min1(abs1(cnu - c + 360), abs1(c - cnu + 360))
-
-
-		)<abs1(gr))
-	{
-		q = 1; xx = cnu;
-	}
-
-	if (q == 0)
-	{
-		if (abs(cnu - c)<180)
-		{
-			if (c - cnu>0){ xx = c - gr; }
-			else{ xx = c + gr; }
-		}
-		else{
-			if (c  >180){ xx = c + gr; }
-			else{ xx = c - gr; }
-		}
-	}
-
-
-
-
-
-
-
-
-	if (xx >= 360) xx -= 360;
-	if (xx  <   0) xx += 360;
-	return xx;
-
-}
-
+/*
 void getvec3d(float cam_c, float cam_c1, float cam_c2, float *x, float *y, float *z)
 {
 	float u, v;
 
-	Vec raycam;
-	Vec raycamleft;
-	Vec raycamup;
+	pos raycam;
+	pos raycamleft;
+	pos raycamup;
 
 	raycam.x = 1;
 	raycam.y = 0;
@@ -1283,673 +825,74 @@ void getvec3d(float cam_c, float cam_c1, float cam_c2, float *x, float *y, float
 
 }
 
-
-
-int SN_perm[512];
-void noise_init()
-{
-	int i; for (i = 0; i < 256; i++) SN_perm[256 + i] = SN_perm[i] = rand() % 256;
-}
-
-float fade(float t)
-{
-	return t * t * t * (t * (t * 6 - 15) + 10);
-}
-
-float lerp(float t, float a, float b)
-{
-	return a + t * (b - a);
-}
-
-float grad(int hash, float x, float y, float z)
-{
-	int h = hash & 15;
-	float u = h < 8 ? x : y, v = h < 4 ? y : h == 12 || h == 14 ? x : z;
-	return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
-}
-
-float noise3(float x, float y, float z)
-{
-	int X = (int)floor(x) & 255,
-		Y = (int)floor(y) & 255,
-		Z = (int)floor(z) & 255;
-	float u, v, w;
-	int A, AA, AB, B, BA, BB;
-	x -= floor(x); y -= floor(y); z -= floor(z);
-	u = fade(x);  v = fade(y);  w = fade(z);
-	A = SN_perm[X] + Y;     AA = SN_perm[A] + Z;  AB = SN_perm[A + 1] + Z;
-	B = SN_perm[X + 1] + Y; BA = SN_perm[B] + Z;  BB = SN_perm[B + 1] + Z;
-	return lerp(w, lerp(v, lerp(u, grad(SN_perm[AA], x, y, z),
-		grad(SN_perm[BA], x - 1, y, z)),
-		lerp(u, grad(SN_perm[AB], x, y - 1, z),
-		grad(SN_perm[BB], x - 1, y - 1, z))),
-		lerp(v, lerp(u, grad(SN_perm[AA + 1], x, y, z - 1),
-		grad(SN_perm[BA + 1], x - 1, y, z - 1)),
-		lerp(u, grad(SN_perm[AB + 1], x, y - 1, z - 1),
-		grad(SN_perm[BB + 1], x - 1, y - 1, z - 1))));
-}
-
-float getplanetw(float xxx,float yyy,float zzz)
-{
-	int desem, i, r, o, j, q, w, a, b, c, d, tt1, tt2, tt3, tt4;
-	float xx, yy, zz, x1, y1, z1, x2, y2, z2, x3, y3, z3, u, v;
-	
-	return noise3(xxx/30,yyy/30,zzz/30);
-}
-
-
-void add_mur(int x,int y);
-
-void add_z(int x, int y, float pow,float add_l, int t)
-{
-	if (pole[x][y].z[t] + add_l < pow)
-		pole[x][y].z[t] = pole[x][y].z[t] + add_l;
-	else
-		if (pole[x][y].z[t]< pow)
-			pole[x][y].z[t] = pow;
-}
-
-void M_upd()
-{
-	int i, r, o, j, a, b, c, d, x, y,m[100];
-	float u, v, xx[10], yy[10];
-
-	//if (rand() % 4 == 0)
-	add_mur(150,150);
-
-	for (i = 0; i < 300; i++)
-	for (r = 0; r < 300; r++)
-	for (o = 0; o < 4; o++)
-	{
-		pole[i][r].z[o] *= 0.999;
-	}
-
-	for (i = 0; i < 300; i++)
-	for (r = 0; r < 300; r++)
-	for (o = 0; o < 4; o++)
-		pole[i][r].zzz[o] = pole[i][r].z[o];
-
-	for (i = 1; i < 300; i++)
-	for (r = 1; r < 300; r++)
-	for (o = 0; o < 4; o++)
-	{
-		v = pole[i][r].z[o] - pole[i - 1][r].z[o];
-		pole[i][r].zzz[o] -= v*0.01;
-		pole[i - 1][r].zzz[o] += v*0.01;
-		v = pole[i][r].z[o] - pole[i][r-1].z[o];
-		pole[i][r].zzz[o] -= v*0.01;
-		pole[i][r-1].zzz[o] += v*0.01;
-	}
-
-	for (i = 0; i < 300; i++)
-	for (r = 0; r < 300; r++)
-	for (o = 0; o < 4; o++)
-		pole[i][r].z[o] = pole[i][r].zzz[o];
-
-
-	for (i = 0; i < 1000; i++)
-	{
-		if (mur[i].t == 1)
-		{
-			if (rand()%8==0)
-			{
-				//mur[i].zx = rand() % 3 - 1;
-				//mur[i].zy = rand() % 3 - 1;
-			}
-			xx[9] = mur[i].zx;
-			yy[9] = mur[i].zy;
-
-			mur[i].dead_time--;
-
-			if (mur[i].x>290)
-				mur[i].t = 0;
-			if (mur[i].y>290)
-				mur[i].t = 0;
-			if (mur[i].x<10)
-				mur[i].t = 0;
-			if (mur[i].y<10)
-				mur[i].t = 0;
-
-			if (mur[i].dead_time <= 0)
-				mur[i].t = 0;
-
-			mur[i].ray_p++;
-			mur[i].x1[mur[i].ray_p] = mur[i].x;
-			mur[i].y1[mur[i].ray_p] = mur[i].y;
-			if (mur[i].ray_p>14900)
-			{
-				mur[i].t = 0;
-			}
-
-			if (strcmp(mur[i].mission, "base") == 0)
-			{
-				x = mur[i].x + mur[i].zx;
-				y = mur[i].y + mur[i].zy;
-
-				xx[0] = -pole[x][y - 1].z[1] + (rand() % 201 - 100) / 3000.0;
-				xx[1] = -pole[x + 1][y].z[1] + (rand() % 201 - 100) / 3000.0;
-				xx[2] = -pole[x][y + 1].z[1] + (rand() % 201 - 100) / 3000.0;
-				xx[3] = -pole[x - 1][y].z[1] + (rand() % 201 - 100) / 3000.0;
-				xx[4] = -3;
-
-				m[0] = 1;
-				m[1] = 1;
-				m[2] = 1;
-				m[3] = 1;
-
-				if (mur[i].ray_p > 30)
-				{
-					x = mur[i].x1[mur[i].ray_p - 30];
-					y = mur[i].y1[mur[i].ray_p - 30];
-					u = 0.01+sqrt(float((x - mur[i].x)*(x - mur[i].x) + (y - mur[i].y)*(y - mur[i].y)));
-					if (x < mur[i].x)
-					if (rand() % 100 <  (mur[i].x - x) / u * 50)
-						m[3] = 0;
-					if (x > mur[i].x)
-					if (rand() % 100 < (x - mur[i].x) / u * 50)
-						m[1] = 0;
-					if (y < mur[i].y)
-					if (rand() % 100 < (mur[i].y - y) / u * 50)
-						m[0] = 0;
-					if (y > mur[i].y)
-					if (rand() % 100 <  (y - mur[i].y) / u * 50)
-						m[2] = 0;
-				}
-
-				o = 4;
-				for (r = 0; r < 4; r++)
-				if (m[r])
-				if (xx[o] < xx[r])
-					o = r;
-
-
-				if (o == 0)
-				{
-					mur[i].y--;
-				}
-				if (o == 1)
-				{
-					mur[i].x++;
-				}
-				if (o == 2)
-				{
-					mur[i].y++;
-				}
-				if (o == 3)
-				{
-					mur[i].x--;
-				}
-
-				if (pole[mur[i].x][mur[i].y].food > 0)
-				{
-					pole[mur[i].x][mur[i].y].food--;
-					mur[i].food++;
-					mur[i].mark_level_f = 1;
-					mur[i].mark_level_h = 0;
-					strcpy(mur[i].mission, "home");
-				}
-
-			}
-			else
-			if (strcmp(mur[i].mission, "food") == 0)
-			{
-				x = mur[i].x + mur[i].zx;
-				y = mur[i].y + mur[i].zy;
-
-				xx[0] = pole[x][y - 1].z[0] * 0.92 - pole[x][y - 1].z[1] + (rand() % 201 - 100) / 3000.0 + pole[x][y - 1].food * 10;
-				xx[1] = pole[x + 1][y].z[0] * 0.92 - pole[x + 1][y].z[1] + (rand() % 201 - 100) / 3000.0 + pole[x + 1][y].food * 10;
-				xx[2] = pole[x][y + 1].z[0] * 0.92 - pole[x][y + 1].z[1] + (rand() % 201 - 100) / 3000.0 + pole[x][y + 1].food * 10;
-				xx[3] = pole[x - 1][y].z[0] * 0.92 - pole[x - 1][y].z[1] + (rand() % 201 - 100) / 3000.0 + pole[x - 1][y].food * 10;
-				xx[4] = -1;
-
-				m[0] = 1;
-				m[1] = 1;
-				m[2] = 1;
-				m[3] = 1;
-
-				if (mur[i].ray_p > 30)
-				{
-					x = mur[i].x1[mur[i].ray_p - 30];
-					y = mur[i].y1[mur[i].ray_p - 30];
-					u = 0.01 + sqrt(float((x - mur[i].x)*(x - mur[i].x) + (y - mur[i].y)*(y - mur[i].y)));
-					if (x < mur[i].x)
-					if (rand() % 100 <  (mur[i].x - x) / u * 50)
-						m[3] = 0;
-					if (x > mur[i].x)
-					if (rand() % 100 < (x - mur[i].x) / u * 50)
-						m[1] = 0;
-					if (y < mur[i].y)
-					if (rand() % 100 < (mur[i].y - y) / u * 50)
-						m[0] = 0;
-					if (y > mur[i].y)
-					if (rand() % 100 <  (y - mur[i].y) / u * 50)
-						m[2] = 0;
-				}
-
-				o = 4;
-				for (r = 0; r < 4; r++)
-				if (m[r])
-				if (xx[o] < xx[r])
-					o = r;
-
-				if (rand() % 5 == 0)
-					o = rand() % 4;
-
-				if (rand() % 10)
-				{
-
-					for (a = -3; a <= 3; a++)
-					for (b = -3; b <= 3; b++)
-					if (pole[mur[i].x + a][mur[i].y + b].food > 0)
-					{
-						if (a < 0)
-							o = 3;
-						if (a > 0)
-							o = 1;
-						if (b < 0)
-							o = 0;
-						if (b > 0)
-							o = 2;
-
-					}
-				}
-
-				if (o == 0)
-				{
-					mur[i].y--;
-				}
-				if (o == 1)
-				{
-					mur[i].x++;
-				}
-				if (o == 2)
-				{
-					mur[i].y++;
-				}
-				if (o == 3)
-				{
-					mur[i].x--;
-				}
-
-				if (pole[mur[i].x][mur[i].y].food > 0)
-				{
-					pole[mur[i].x][mur[i].y].food--;
-					mur[i].food++;
-					mur[i].mark_level_f = 1;
-					mur[i].mark_level_h = 0;
-					strcpy(mur[i].mission, "home");
-				}
-			}
-			else
-			if (strcmp(mur[i].mission, "home") == 0)
-			{
-				x = mur[i].x + mur[i].zx;
-				y = mur[i].y + mur[i].zy;
-
-				xx[0] = -pole[x][y - 1].z[0] * 0.92 + pole[x][y - 1].z[1] + (rand() % 201 - 100) / 3000.0;
-				xx[1] = -pole[x + 1][y].z[0] * 0.92 + pole[x + 1][y].z[1] + (rand() % 201 - 100) / 3000.0;
-				xx[2] = -pole[x][y + 1].z[0] * 0.92 + pole[x][y + 1].z[1] + (rand() % 201 - 100) / 3000.0;
-				xx[3] = -pole[x - 1][y].z[0] * 0.92 + pole[x - 1][y].z[1] + (rand() % 201 - 100) / 3000.0;
-				xx[4] = -1;
-
-				o = 4;
-				for (r = 0; r < 4; r++)
-				if (xx[o] < xx[r])
-					o = r;
-
-				mur[i].x = mur[i].x1[mur[i].ray_p - 1];
-				mur[i].y = mur[i].y1[mur[i].ray_p - 1];
-
-				for (r = 0; mur[i].x != mur[i].x1[r]
-					|| mur[i].y != mur[i].y1[r]; r++);
-
-				mur[i].ray_p = r-1;
-
-				if (mur[i].ray_p<4)
-				{
-					mur[i].t = 0;
-				}
-
-				if ((mur[i].x - 150)*(mur[i].x - 150) + (mur[i].y - 150)*(mur[i].y - 150) < 30)
-				{
-					mur[i].t = 0;
-				}
-			}
-
-
-			mur[i].mark_level_f *= 0.999;
-			mur[i].mark_level_h *= 0.999;
-
-			if (strcmp(mur[i].mission, "home") == 0)
-			if (mur[i].mark_level_f > 0.001)
-				add_z(mur[i].x, mur[i].y, mur[i].mark_level_f, 0.15, 0);
-
-			if (mur[i].mark_level_h > 0.001)
-				add_z(mur[i].x, mur[i].y, mur[i].mark_level_h, 0.1, 1);
-
-			mur[i].mark_level_f = pole[mur[i].x][mur[i].y].z[0];
-			mur[i].mark_level_h = pole[mur[i].x][mur[i].y].z[1];
-
-		}
-	}
-}
-
-
-void M_init()
-{
-	int i, r, o, j, a, b, c, d;
-	float u, v;
-
-	M_speed = 1;
-	for (i = 0; i < 1000; i++)
-		mur[i].t = 0;
-
-	for (i = 0; i < 300; i++)
-	for (r = 0; r < 300; r++)
-	{
-		pole[i][r].block = 0;
-		pole[i][r].food = 0;
-		pole[i][r].z[0] = 0;
-		pole[i][r].z[1] = 0;
-		pole[i][r].z[2] = 0;
-		pole[i][r].z[3] = 0;
-	}
-
-	add_mur(70, 150);
-}
-
-void M_put()
-{
-	byte *data=(byte*)malloc(3*512*512);
-	int i, r,x,y;
-
-	for (i = 0; i < 300; i++)
-	for (r = 0; r < 300; r++)
-	{
-		data[(i + r * 512) * 3 + 0] = pole[i][r].z[0]*255;
-		data[(i + r * 512) * 3+1] = 100;
-		data[(i + r * 512) * 3 + 2] = pole[i][r].z[1]*255;
-
-		if (pole[i][r].food>0)
-		{
-			data[(i + r * 512) * 3 + 0] = 0;
-			data[(i + r * 512) * 3 + 1] = 255;
-			data[(i + r * 512) * 3 + 2] = 255;
-		}
-		
-	}
-	for (i = 0; i < 1000; i++)
-	if (mur[i].t==1)
-	{
-		x = mur[i].x;
-		y = mur[i].y;
-		data[(x + y* 512) * 3 + 0] = 0;
-		data[(x + y* 512) * 3 + 1] = 0;
-		data[(x + y* 512) * 3 + 2] = 0;
-	}
-
-	for (i = 130; i < 170; i++)
-		for (r = 130; r < 170; r++)
-		{
-
-			if ((i - 150)*(i - 150) + (r - 150)*(r - 150)<50)
-			{
-				data[(i + r * 512) * 3 + 0] = 150;
-				data[(i + r * 512) * 3 + 1] = 50;
-				data[(i + r * 512) * 3 + 2] = 0;
-			}
-
-		}
-
-	glDeleteTextures(1, &tex_mur);
-	glGenTextures(1, &tex_mur);
-
-	glBindTexture(GL_TEXTURE_2D, tex_mur);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);	
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 512, 512, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-
-
-	glColor4f(1, 1, 1, 1);
-	glBindTexture(GL_TEXTURE_2D,tex_mur);
-	glBegin(GL_POLYGON);
-	glTexCoord2f(0, 0);
-	glVertex3f(-(razokx + 4 * 000) / (float)razoky * 10, -(razoky + 4 * 000) / (float)razoky * 10, 10);
-
-	glTexCoord2f(0, 300 / 512.0); 
-	glVertex3f(-(razokx + 4 * 000) / (float)razoky * 10, -(razoky - 4 * 300) / (float)razoky * 10, 10);
-
-	glTexCoord2f(300 / 512.0, 300 / 512.0);
-	glVertex3f(-(razokx - 4 * 300) / (float)razoky * 10, -(razoky - 4 * 300) / (float)razoky * 10, 10);
-
-	glTexCoord2f(300 / 512.0, 0);
-	glVertex3f(-(razokx - 4 * 300) / (float)razoky * 10, -(razoky + 4 * 000) / (float)razoky * 10, 10);
-
-	glEnd();
-
-
-	free(data);
-
-}
-void add_mur(int x,int y)
-{
-	int i, r, o, j;
-	j = -1;
-	for (i = 0; i < 1000 && j == -1; i++)
-	if (mur[i].t == 0)
-		j = i;
-
-	if (j == -1)
-		return;
-
-
-	i = j;
-	mur[i].dead_time = 5000;
-	mur[i].t = 1;
-	mur[i].x = x;
-	mur[i].y = y;
-	mur[i].zx = rand() % 3 - 1;
-	mur[i].zy = rand() % 3 - 1;
-	mur[i].ray_p = 0;
-	if (rand() % 2)
-	{
-		strcpy(mur[i].mission, "food");
-		mur[i].mark_level_f = 0;
-		mur[i].mark_level_h = 0;
-	}
-	else
-	{
-		strcpy(mur[i].mission, "base");
-		mur[i].mark_level_f = 0;
-		mur[i].mark_level_h = 1;
-	}
-
-}
-
-
-
-void Draw()
-{
-
-	int desem, i, r, o, j, q, w, a, b, c, d, tt1, tt2, tt3, tt4;
-	float xx, yy, zz, x1, y1, z1, x2, y2, z2, x3, y3, z3, u, v;
-
-
-
-	glDisable(GL_TEXTURE_2D);
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glLoadIdentity();
-
-	glClearColor(0.0, 0.0, 0.0, 1);
-
-	ti++;
-
-	mxz = razokx / 2;
-	myz = razoky / 2;
-	if (((mx - mxz) != 0) || ((my - myz) != 0))
-	{
-		movve(&cam.c2, &cam.c1, &cam.c3, -(mx - mxz), (my - myz));
-		//SetCursorPos(razokx / 2, razoky / 2);
-	}
-
-
-	glPushMatrix();
-
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_TEXTURE_2D);
-	glEnable(GL_ALPHA_TEST);
-
-	if (1 == 2)
-	{
-		i = i;
-	}
-
-	cam.c3 = 0;
-	cam.c2 = 0;
-	cam.c1 = 180;
-	//glTranslatef(0,0,-5 );  
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_TEXTURE_2D);
-	glEnable(GL_ALPHA_TEST);
-
-	glRotatef(cam.c3, 0, 0, 1);
-	glRotatef(cam.c1, 1, 0, 0);
-	glRotatef(cam.c2, 0, 1, 0);
-	glTranslatef(-cam.x, -cam.y, -cam.z);
-
-
-
-	M_put();
-
-	glPopMatrix();
-
-		
-	glColor4f(1, 1, 1, 1);
-	glRasterPos3f(-razokx/(float)razoky, 0.95, -1);
-	glPrint("Q  add food");
-	glRasterPos3f(-razokx / (float)razoky, 0.90, -1);
-	glPrint("Z  + speed");
-	glRasterPos3f(-razokx / (float)razoky, 0.85, -1);
-	glPrint("X  - speed");
-	glRasterPos3f(-razokx / (float)razoky, 0.80, -1);
-	glPrint("speed: %i",M_speed);
-
-	glColor4f(1, 1, 1, 1);
-	for(i = 0; i < 40; i++)
-	{
-		glRasterPos3f(-razokx / (float)razoky, 0.95 - 0.05*i, -1);
-		glPrint(out.s[i].data());
-	}
-	/*
-
-	glDisable(GL_TEXTURE_2D);
-	//END Graphics
-
-
-	glPopMatrix();
-	glDisable(GL_DEPTH_TEST);
-
-	glColor4f(1, 0.7, 0.7, 1);
-	glBegin(GL_LINES);
-	glVertex3f(-0.1, 0, -1);
-	glVertex3f(0.1, 0, -1);
-	glVertex3f(0, -0.1, -1);
-	glVertex3f(0, 0.1, -1);
-	glEnd();
-
-	glColor4f(1, 1, 1, 1);
-	glRasterPos3f(0, 0, -1);
-	//	glPrint("Milliseconds:%f",0.0001);
-
-
-	*/
-
-	mchz = mch;
-	mchlz = mchl;
-	mchrz = mchr;
-
-
-}
-
-
-
 void movve(float *cam_c, float *cam_c1, float *cam_c2, float x, float y)
 {
-	float u, v;
+float u, v;
 
-	Vec raycam;
-	Vec raycamleft;
-	Vec raycamup;
+Vec raycam;
+Vec raycamleft;
+Vec raycamup;
 
-	raycam.x = 1;
-	raycam.y = 0;
-	raycam.z = 0;
+raycam.x = 1;
+raycam.y = 0;
+raycam.z = 0;
 
-	raycamleft.x = 0;
-	raycamleft.y = 1;
-	raycamleft.z = 0;
+raycamleft.x = 0;
+raycamleft.y = 1;
+raycamleft.z = 0;
 
-	raycamup.x = 0;
-	raycamup.y = 0;
-	raycamup.z = -1;
+raycamup.x = 0;
+raycamup.y = 0;
+raycamup.z = -1;
 
-	roate(&raycam.x, &raycam.z, 0, 0, y);
-	roate(&raycamleft.x, &raycamleft.z, 0, 0, y);
-	roate(&raycamup.x, &raycamup.z, 0, 0, y);
+roate(&raycam.x, &raycam.z, 0, 0, y);
+roate(&raycamleft.x, &raycamleft.z, 0, 0, y);
+roate(&raycamup.x, &raycamup.z, 0, 0, y);
 
-	roate(&raycam.x, &raycam.y, 0, 0, -x);
-	roate(&raycamleft.x, &raycamleft.y, 0, 0, -x);
-	roate(&raycamup.x, &raycamup.y, 0, 0, -x);
-	//sdelal samrrr@mail.ru
-	roate(&raycam.y, &raycam.z, 0, 0, cam_c2[0]);
-	roate(&raycamleft.y, &raycamleft.z, 0, 0, cam_c2[0]);
-	roate(&raycamup.y, &raycamup.z, 0, 0, cam_c2[0]);
+roate(&raycam.x, &raycam.y, 0, 0, -x);
+roate(&raycamleft.x, &raycamleft.y, 0, 0, -x);
+roate(&raycamup.x, &raycamup.y, 0, 0, -x);
+//sdelal samrrr@mail.ru
+roate(&raycam.y, &raycam.z, 0, 0, cam_c2[0]);
+roate(&raycamleft.y, &raycamleft.z, 0, 0, cam_c2[0]);
+roate(&raycamup.y, &raycamup.z, 0, 0, cam_c2[0]);
 
-	roate(&raycam.x, &raycam.z, 0, 0, cam_c1[0]);
-	roate(&raycamleft.x, &raycamleft.z, 0, 0, cam_c1[0]);
-	roate(&raycamup.x, &raycamup.z, 0, 0, cam_c1[0]);
+roate(&raycam.x, &raycam.z, 0, 0, cam_c1[0]);
+roate(&raycamleft.x, &raycamleft.z, 0, 0, cam_c1[0]);
+roate(&raycamup.x, &raycamup.z, 0, 0, cam_c1[0]);
 
-	roate(&raycam.x, &raycam.y, 0, 0, cam_c[0]);
-	roate(&raycamleft.x, &raycamleft.y, 0, 0, cam_c[0]);
-	roate(&raycamup.x, &raycamup.y, 0, 0, cam_c[0]);
+roate(&raycam.x, &raycam.y, 0, 0, cam_c[0]);
+roate(&raycamleft.x, &raycamleft.y, 0, 0, cam_c[0]);
+roate(&raycamup.x, &raycamup.y, 0, 0, cam_c[0]);
 
-	//	camv.x=raycam.y;
-	//	camv.y=-raycam.z;
-	//	camv.z=-raycam.x;
+//	camv.x=raycam.y;
+//	camv.y=-raycam.z;
+//	camv.z=-raycam.x;
 
-	/*
-	//xyz
-	//xzy
-	//yxz
-	//yzx
-	//zxy
-	//zyx
-	*/
 
-	u = ss(0, 0, raycam.y, raycam.x);
-	u = -u;
-	cam_c[0] = u;
+u = ss(0, 0, raycam.y, raycam.x);
+u = -u;
+cam_c[0] = u;
 
-	roate(&raycam.x, &raycam.y, 0, 0, -u);
-	roate(&raycamleft.x, &raycamleft.y, 0, 0, -u);
-	roate(&raycamup.x, &raycamup.y, 0, 0, -u);
+roate(&raycam.x, &raycam.y, 0, 0, -u);
+roate(&raycamleft.x, &raycamleft.y, 0, 0, -u);
+roate(&raycamup.x, &raycamup.y, 0, 0, -u);
 
-	u = ss(0, 0, raycam.x, raycam.z);
-	u = u + 90 + 180;
-	cam_c1[0] = u;
+u = ss(0, 0, raycam.x, raycam.z);
+u = u + 90 + 180;
+cam_c1[0] = u;
 
-	roate(&raycam.x, &raycam.z, 0, 0, -u);
-	roate(&raycamleft.x, &raycamleft.z, 0, 0, -u);
-	roate(&raycamup.x, &raycamup.z, 0, 0, -u);
+roate(&raycam.x, &raycam.z, 0, 0, -u);
+roate(&raycamleft.x, &raycamleft.z, 0, 0, -u);
+roate(&raycamup.x, &raycamup.z, 0, 0, -u);
 
-	u = ss(0, 0, raycamup.y, raycamup.z);
+u = ss(0, 0, raycamup.y, raycamup.z);
 
-	cam_c2[0] = u;
+cam_c2[0] = u;
 
-	//roate(&raycam    .y,&raycam    .z,0,0,-u);
-	//roate(&raycamleft.y,&raycamleft.z,0,0,-u);
-	//roate(&raycamup  .y,&raycamup  .z,0,0,-u);
+//roate(&raycam    .y,&raycam    .z,0,0,-u);
+//roate(&raycamleft.y,&raycamleft.z,0,0,-u);
+//roate(&raycamup  .y,&raycamup  .z,0,0,-u);
 
 
 }
@@ -1993,4 +936,97 @@ void movveforw(float cam_c, float cam_c1, float cam_c2, float rass, float *cam_x
 
 
 }
+
+*/
+
+
+
+void Draw()
+{
+
+	int desem, i, r, o, j, q, w, a, b, c, d, tt1, tt2, tt3, tt4;
+	float xx, yy, zz, x1, y1, z1, x2, y2, z2, x3, y3, z3, u, v;
+
+
+
+	glDisable(GL_TEXTURE_2D);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glLoadIdentity();
+
+	glClearColor(0.0, 0.0, 0.0, 1);
+
+	/*
+	mxz = razokx / 2;
+	myz = razoky / 2;
+	if (((mx - mxz) != 0) || ((my - myz) != 0))
+	{
+		movve(&cam.c2, &cam.c1, &cam.c3, -(mx - mxz), (my - myz));
+		//SetCursorPos(razokx / 2, razoky / 2);
+	}
+	*/
+
+	glPushMatrix();
+
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_ALPHA_TEST);
+
+
+	cam.c3 = 0;
+	cam.c2 = 0;
+	cam.c1 = 180;
+	//glTranslatef(0,0,-5 );  
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_ALPHA_TEST);
+
+	glRotatef(cam.c3, 0, 0, 1);
+	glRotatef(cam.c1, 1, 0, 0);
+	glRotatef(cam.c2, 0, 1, 0);
+	glTranslatef(-cam.x, -cam.y, -cam.z);
+
+
+
+
+	glPopMatrix();
+
+		
+	glColor4f(1, 1, 1, 1);
+	glRasterPos3f(-razokx/(float)razoky, 0.95, -1);
+	glPrint("Q  add food");
+	glRasterPos3f(-razokx / (float)razoky, 0.90, -1);
+	glPrint("Z  + speed");
+	glRasterPos3f(-razokx / (float)razoky, 0.85, -1);
+	glPrint("X  - speed");
+
+	glColor4f(1, 1, 1, 1);
+	for(i = 0; i < 40; i++)
+	{
+		glRasterPos3f(-razokx / (float)razoky, 0.95 - 0.05*i, -1);
+		glPrint("FFf344");
+	}
+	/*
+
+	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_DEPTH_TEST);
+
+	glColor4f(1, 0.7, 0.7, 1);
+	glBegin(GL_LINES);
+	glVertex3f(-0.1, 0, -1);
+	glVertex3f(0.1, 0, -1);
+	glVertex3f(0, -0.1, -1);
+	glVertex3f(0, 0.1, -1);
+	glEnd();
+
+
+
+	*/
+
+
+
+}
+
+
+
 

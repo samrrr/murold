@@ -12,14 +12,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="code.cpp" />
-    <ClCompile Include="MUR.cpp" />
     <ClCompile Include="NeHeGL.cpp" />
-    <ClCompile Include="out.cpp" />
+    <ClCompile Include="samrrr_bibl.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="mur.h" />
     <ClInclude Include="NeHeGL.h" />
-    <ClInclude Include="out.h" />
     <ClInclude Include="samrrr_bibl.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

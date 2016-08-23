@@ -21,24 +21,15 @@
     <ClCompile Include="code.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
-    <ClCompile Include="MUR.cpp">
-      <Filter>Файлы исходного кода</Filter>
-    </ClCompile>
-    <ClCompile Include="out.cpp">
+    <ClCompile Include="samrrr_bibl.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="mur.h">
-      <Filter>Заголовочные файлы</Filter>
-    </ClInclude>
     <ClInclude Include="NeHeGL.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
     <ClInclude Include="samrrr_bibl.h">
-      <Filter>Заголовочные файлы</Filter>
-    </ClInclude>
-    <ClInclude Include="out.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
   </ItemGroup>
